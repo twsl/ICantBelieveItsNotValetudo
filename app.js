@@ -1,13 +1,20 @@
 const Configuration = require("./lib/Configuration");
+const Logger = require("./lib/Logger");
 const MqttClient = require("./lib/MqttClient");
 const WebServer = require("./lib/Webserver");
-const EventEmitter = require('events');
 
 const conf = new Configuration();
-const events = new EventEmitter();
+const mapData = {};
 
-if(conf.get("mqtt")) {
-    new MqttClient({
+try {
+    Logger.LogLevel = conf.get("logLevel");
+} catch (e) {
+    Logger.error("Initialising Logger: " + e);
+}
+
+if (conf.get("mqtt")) {
+    // eslint-disable-next-line no-unused-vars
+    const mqttClient = new MqttClient({
         brokerURL: conf.get("mqtt").broker_url,
         caPath: conf.get("mqtt").caPath,
         identifier: conf.get("mqtt").identifier,
@@ -17,14 +24,17 @@ if(conf.get("mqtt")) {
         mapDataTopic: conf.get("mqtt").mapDataTopic,
         minMillisecondsBetweenMapUpdates: conf.get("mqtt").minMillisecondsBetweenMapUpdates,
         publishMapImage: conf.get("mqtt").publishMapImage,
-        events: events
+
+        mapData: mapData
     });
-    if(conf.get("webserver") && conf.get("webserver").enabled === true) {
-        new WebServer({
+
+    if (conf.get("webserver") && conf.get("webserver").enabled === true) {
+        // eslint-disable-next-line no-unused-vars
+        const webServer = new WebServer({
             port: conf.get("webserver").port,
-            events: events
-        })
+            mapData: mapData
+        });
     }
 } else {
-    console.error("Missing configuration.mqtt");
+    Logger.error("Missing configuration.mqtt!");
 }
